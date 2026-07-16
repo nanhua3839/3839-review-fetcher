@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3839 好游快爆评价抓取工具</title>
+<!-- CloudBase Web SDK -->
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"></script>
+<style>
+:root {
+  --primary: #4f6df5;
+  --primary-dark: #3b54d4;
+  --primary-light: #eef1ff;
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --primary-light: #1e293b;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 40px 20px 30px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.header h1 span { color: var(--primary); }
+.header p { color: var(--text-secondary); font-size: 15px; }
+.logo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* Input Card */
+.input-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+  margin-bottom: 24px;
+}
+.input-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.input-group { flex: 1; min-width: 240px; }
+.input-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+.input-group input:focus, .input-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled {
+  background: var(--text-secondary);
+  cursor: not-allowed;
+}
+.btn-secondary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.btn-secondary:hover { background: var(--border); }
+.btn-export {
+  background: var(--success);
+  color: #fff;
+}
+.btn-export:hover { background: #0d9668; }
+
+/* Progress */
+.progress-section {
+  display: none;
+  margin-bottom: 24px;
+}
+.progress-section.active { display: block; }
+.progress-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.progress-bar-wrap {
+  background: var(--border);
+  border-radius: 20px;
+  height: 8px;
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #7c8fff);
+  border-radius: 20px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.progress-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--primary-light);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Stats */
+.stats-section { display: none; margin-bottom: 24px; }
+.stats-section.active { display: block; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.stat-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  text-align: center;
+}
+.stat-card .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.stat-card .stat-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Rating badges */
+.rating-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.rating-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.rating-badge.r5 { background: #dcfce7; color: #15803d; }
+.rating-badge.r4 { background: #dbeafe; color: #1d4ed8; }
+.rating-badge.r3 { background: #fef9c3; color: #a16207; }
+.rating-badge.r2 { background: #fee2e2; color: #b91c1c; }
+.rating-badge.r1 { background: #fecaca; color: #991b1b; }
+
+/* Table */
+.table-section { display: none; }
+.table-section.active { display: block; }
+.table-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.table-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.table-header h3 { font-size: 16px; font-weight: 700; }
+.table-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.search-box {
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  width: 200px;
+}
+.search-box:focus { outline: none; border-color: var(--primary); }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+thead th {
+  background: var(--bg);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+}
+thead th:hover { color: var(--primary); }
+thead th .sort-icon { font-size: 10px; opacity: 0.5; margin-left: 4px; }
+tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tbody tr:hover { background: var(--primary-light); }
+tbody tr:last-child td { border-bottom: none; }
+.col-idx { width: 50px; text-align: center; color: var(--text-secondary); }
+.col-date { width: 100px; white-space: nowrap; }
+.col-star { width: 70px; white-space: nowrap; }
+.col-game { width: 160px; }
+.col-type { width: 60px; text-align: center; }
+.col-link { width: 60px; text-align: center; }
+.col-content { min-width: 200px; }
+.star-display {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.star-display.s5 { background: #dcfce7; color: #15803d; }
+.star-display.s4 { background: #dbeafe; color: #1d4ed8; }
+.star-display.s3 { background: #fef9c3; color: #a16207; }
+.star-display.s2 { background: #fee2e2; color: #b91c1c; }
+.star-display.s1 { background: #fecaca; color: #991b1b; }
+.star-display.s0 { background: var(--border); color: var(--text-secondary); }
+.type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.type-badge.review { background: var(--primary-light); color: var(--primary); }
+.type-badge.reply { background: #f3f4f6; color: var(--text-secondary); }
+.content-cell {
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  cursor: pointer;
+}
+.content-cell:hover { color: var(--primary); }
+.link-btn {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 13px;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.modal-header h3 { font-size: 18px; font-weight: 700; }
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0;
+}
+.modal-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.modal-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.modal-content {
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.modal-link {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* Error */
+.error-msg {
+  display: none;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.error-msg.active { display: block; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.footer a { color: var(--primary); text-decoration: none; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .header h1 { font-size: 22px; }
+  .input-row { flex-direction: column; }
+  .input-group { min-width: 100%; }
+  .btn { width: 100%; justify-content: center; }
+  .table-actions { flex-direction: column; }
+  .search-box { width: 100%; }
+  .col-content { max-width: 200px; }
+  .modal { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-badge">🎮 好游快爆评价抓取工具</div>
+    <h1>3839 <span>Review Fetcher</span></h1>
+    <p>输入用户 UID 或主页链接，批量抓取游戏评价，支持导出 Excel</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Input -->
+  <div class="input-card">
+    <div class="input-row">
+      <div class="input-group">
+        <label>用户 UID 或主页链接</label>
+        <input type="text" id="uidInput" placeholder="输入 UID (如 20594033) 或粘贴主页链接" value="">
+      </div>
+      <div class="input-group" style="flex: 0 0 130px;">
+        <label>抓取数量</label>
+        <select id="countSelect">
+          <option value="50">50 条</option>
+          <option value="100">100 条</option>
+          <option value="300" selected>300 条</option>
+          <option value="500">500 条</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="fetchBtn" onclick="startFetch()">
+        <span id="fetchBtnText">🚀 开始抓取</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <div class="spinner"></div>
+        <span style="font-weight: 600; font-size: 15px;" id="progressTitle">正在抓取评价...</span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text">
+        <span id="progressDetail">准备中...</span>
+        <span id="progressCount">0 / 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-section" id="statsSection">
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-section" id="tableSection">
+    <div class="table-card">
+      <div class="table-header">
+        <h3>评价列表</h3>
+        <div class="table-actions">
+          <input type="text" class="search-box" id="searchBox" placeholder="搜索游戏名或内容..." oninput="filterTable()">
+          <button class="btn btn-export" onclick="exportCSV()">📥 导出 CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th class="col-idx" onclick="sortTable('idx')">序号</th>
+              <th class="col-date" onclick="sortTable('date')">日期</th>
+              <th class="col-star" onclick="sortTable('star')">评分</th>
+              <th class="col-game" onclick="sortTable('game')">游戏名称</th>
+              <th class="col-type" onclick="sortTable('type')">类型</th>
+              <th class="col-content">评价内容</th>
+              <th class="col-link">链接</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="emptyState" style="display: none;">
+    <div class="icon">📋</div>
+    <p>输入 UID 开始抓取评价</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">评价详情</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-meta" id="modalMeta"></div>
+    <div class="modal-content" id="modalContent"></div>
+    <div class="modal-link" id="modalLink"></div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>数据来源：<a href="https://www.3839.com" target="_blank">好游快爆 3839.com</a> · 仅供学习研究使用</p>
+</div>
+
+<script>
+// ── CloudBase 初始化 ───────────────────────────────────────────────────────────
+const ENV_ID = 'nanhua-7gd6q2h3cb2db2cb';
+
+// 初始化 CloudBase
+let app = null;
+let isCloudBaseReady = false;
+
+try {
+  app = cloudbase.init({ env: ENV_ID });
+  app.auth({ persistence: 'local' }).anonymousAuthProvider().signIn().then(() => {
+    isCloudBaseReady = true;
+    console.log('CloudBase 初始化成功');
+  }).catch(err => {
+    console.warn('CloudBase 登录失败，将使用本地代理模式:', err);
+  });
+} catch(e) {
+  console.warn('CloudBase SDK 加载失败，将使用本地代理模式:', e);
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allReviews = [];
+let filteredReviews = [];
+let sortColumn = 'idx';
+let sortAsc = true;
+
+const STAR_MAP = { '1': '很差', '2': '差', '3': '一般', '4': '不错', '5': '力荐' };
+const STAR_CLASS = { '1': 's1', '2': 's2', '3': 's3', '4': 's4', '5': 's5', '': 's0' };
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function fetchAPI(lastId, cursor, uid) {
+  const body = `ac=dynamic_home&last_id=${lastId}&cursor=${cursor}&vuid=${uid}`;
+
+  // 优先使用 CloudBase 云函数
+  if (isCloudBaseReady) {
+    try {
+      const result = await app.callFunction({
+        name: 'tcb-proxy',
+        data: { body: body }
+      });
+      // 云函数直接返回解析后的 JSON 对象
+      // result.result 就是 { code: "100", result: { data, last_id, cursor, ... } }
+      if (result.result && result.result.code) {
+        return result.result;
+      }
+      // 兼容：如果 result.result 是字符串
+      if (typeof result.result === 'string') {
+        return JSON.parse(result.result);
+      }
+      return result.result;
+    } catch(e) {
+      console.warn('CloudBase 调用失败，回退到本地代理:', e);
+    }
+  }
+
+  // 回退：本地代理
+  const resp = await fetch('/api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return resp.json();
+}
+
+function parseItem(item) {
+  const fid = item.fid || '';
+  const cid = item.id || '';
+  const pid = item.pid || 1;
+  const star = item.star || '';
+  const content = item.content || '';
+  const addtime = item.addtime || '';
+  const dynamicType = item.dynamic_type || '';
+  const playTime = item.play_time_str || '';
+
+  let gameName = '';
+  const gameInfo = item.game_info;
+  if (gameInfo && typeof gameInfo === 'object') {
+    gameName = gameInfo.name || gameInfo.title || '';
+  }
+
+  const reviewUrl = `https://m.3839.com/review/?pid=${pid}&fid=${fid}&cid=${cid}`;
+
+  // Clean HTML
+  let cleanContent = content.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
+
+  // Format date
+  let dateStr = '';
+  if (addtime) {
+    const ts = parseInt(addtime);
+    if (!isNaN(ts)) {
+      const d = new Date(ts * 1000);
+      dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  }
+
+  return {
+    idx: 0,
+    url: reviewUrl,
+    date: dateStr,
+    dateTs: addtime ? parseInt(addtime) : 0,
+    star: star,
+    starText: STAR_MAP[String(star)] || (star ? star + '星' : '未评分'),
+    gameName: gameName,
+    playTime: playTime,
+    type: dynamicType === 'comment_game' ? 'review' : 'reply',
+    typeText: dynamicType === 'comment_game' ? '评价' : '回复',
+    content: cleanContent,
+    rawContent: content,
+  };
+}
+
+// ── Fetch Logic ───────────────────────────────────────────────────────────────
+function extractUid(input) {
+  const match = input.match(/\/zone\/user\/(\d+)/);
+  if (match) return match[1];
+  if (/^\d+$/.test(input.trim())) return input.trim();
+  return null;
+}
+
+async function startFetch() {
+  const input = document.getElementById('uidInput').value.trim();
+  const count = parseInt(document.getElementById('countSelect').value);
+
+  if (!input) { showError('请输入 UID 或主页链接'); return; }
+
+  const uid = extractUid(input);
+  if (!uid) { showError('无法识别 UID，请输入纯数字 UID 或完整主页链接'); return; }
+
+  // Reset
+  hideError();
+  allReviews = [];
+  filteredReviews = [];
+  document.getElementById('statsSection').classList.remove('active');
+  document.getElementById('tableSection').classList.remove('active');
+  document.getElementById('progressSection').classList.add('active');
+  document.getElementById('fetchBtn').disabled = true;
+  document.getElementById('fetchBtnText').textContent = '抓取中...';
+
+  let lastId = '';
+  let cursor = 0;
+  let page = 0;
+
+  try {
+    while (allReviews.length < count) {
+      page++;
+      updateProgress(`正在获取第 ${page} 页...`, allReviews.length, count);
+
+      const result = await fetchAPI(lastId, cursor, uid);
+      const code = String(result.code);
+
+      if (code !== '100') {
+        throw new Error(`API 错误: ${result.msg || '未知错误'} (code: ${code})`);
+      }
+
+      const data = result.result || {};
+      const items = data.data || [];
+
+      // Show user stats on first page
+      if (page === 1 && data.num) {
+        const num = data.num;
+        updateProgress(`用户共有 ${num.num_total || '?'} 条动态，正在抓取...`, allReviews.length, count);
+      }
+
+      for (const item of items) {
+        const parsed = parseItem(item);
+        parsed.idx = allReviews.length + 1;
+        allReviews.push(parsed);
+      }
+
+      updateProgress(`已获取 ${allReviews.length} 条`, allReviews.length, count);
+
+      // Check end
+      const newLastId = String(data.last_id || '');
+      const newCursor = data.cursor || 0;
+
+      if (newLastId === '-1' || newCursor === -1 || items.length === 0) {
+        break;
+      }
+
+      lastId = newLastId;
+      cursor = newCursor;
+
+      // Small delay
+      await sleep(400);
+    }
+
+    // Trim
+    allReviews = allReviews.slice(0, count);
+
+    // Update progress to done
+    updateProgress('抓取完成！', allReviews.length, count);
+
+    // Show results
+    setTimeout(() => {
+      document.getElementById('progressSection').classList.remove('active');
+      if (allReviews.length > 0) {
+        renderStats();
+        filteredReviews = [...allReviews];
+        renderTable();
+        document.getElementById('statsSection').classList.add('active');
+        document.getElementById('tableSection').classList.add('active');
+      } else {
+        showError('未获取到任何评价数据，请检查 UID 是否正确');
+      }
+    }, 500);
+
+  } catch (err) {
+    showError(`抓取失败: ${err.message}`);
+    document.getElementById('progressSection').classList.remove('active');
+  } finally {
+    document.getElementById('fetchBtn').disabled = false;
+    document.getElementById('fetchBtnText').textContent = '🚀 开始抓取';
+  }
+}
+
+function updateProgress(text, current, total) {
+  document.getElementById('progressTitle').textContent = text;
+  document.getElementById('progressDetail').textContent = text;
+  document.getElementById('progressCount').textContent = `${current} / ${total}`;
+  const pct = total > 0 ? Math.min(100, (current / total) * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = allReviews.length;
+  const reviews = allReviews.filter(r => r.type === 'review');
+  const replies = allReviews.filter(r => r.type === 'reply');
+
+  const dates = allReviews.filter(r => r.date).map(r => r.date).sort();
+  const dateRange = dates.length > 0 ? `${dates[dates.length-1]} ~ ${dates[0]}` : '-';
+
+  // Rating distribution
+  const starCounts = {};
+  allReviews.forEach(r => {
+    const key = r.starText;
+    starCounts[key] = (starCounts[key] || 0) + 1;
+  });
+  const starBadges = Object.entries(starCounts).map(([k, v]) => {
+    const starVal = Object.entries(STAR_MAP).find(([_, text]) => text === k);
+    const cls = starVal ? STAR_CLASS[starVal[0]] : 's0';
+    return `<span class="rating-badge ${cls.replace('s','r')}">${k}: ${v}</span>`;
+  }).join('');
+
+  const games = new Set(allReviews.filter(r => r.gameName).map(r => r.gameName));
+
+  const html = `
+    <div class="stat-card">
+      <div class="stat-value">${total}</div>
+      <div class="stat-label">总评价数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${reviews.length}</div>
+      <div class="stat-label">游戏评价</div>
+      <div class="stat-detail">${replies.length} 条回复</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${games.size}</div>
+      <div class="stat-label">评价游戏数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="font-size: 16px;">${dateRange}</div>
+      <div class="stat-label">日期范围</div>
+      <div class="rating-badges">${starBadges}</div>
+    </div>
+  `;
+  document.getElementById('statsGrid').innerHTML = html;
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  if (filteredReviews.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-secondary);">无匹配结果</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredReviews.map(r => {
+    const starVal = String(r.star);
+    const starClass = STAR_CLASS[starVal] || 's0';
+    return `
+      <tr>
+        <td class="col-idx">${r.idx}</td>
+        <td class="col-date">${r.date || '-'}</td>
+        <td class="col-star"><span class="star-display ${starClass}">${r.starText}</span></td>
+        <td class="col-game">${escapeHtml(r.gameName) || '-'}</td>
+        <td class="col-type"><span class="type-badge ${r.type}">${r.typeText}</span></td>
+        <td class="col-content" onclick="showDetail(${r.idx})">${escapeHtml(r.content.substring(0, 150))}${r.content.length > 150 ? '...' : ''}</td>
+        <td class="col-link"><a class="link-btn" href="${r.url}" target="_blank">查看↗</a></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterTable() {
+  const query = document.getElementById('searchBox').value.toLowerCase().trim();
+  if (!query) {
+    filteredReviews = [...allReviews];
+  } else {
+    filteredReviews = allReviews.filter(r =>
+      (r.gameName && r.gameName.toLowerCase().includes(query)) ||
+      (r.content && r.content.toLowerCase().includes(query))
+    );
+  }
+  applySort();
+  renderTable();
+}
+
+function sortTable(col) {
+  if (sortColumn === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortColumn = col;
+    sortAsc = true;
+  }
+  applySort();
+  renderTable();
+}
+
+function applySort() {
+  filteredReviews.sort((a, b) => {
+    let valA, valB;
+    switch(sortColumn) {
+      case 'idx': valA = a.idx; valB = b.idx; break;
+      case 'date': valA = a.dateTs; valB = b.dateTs; break;
+      case 'star': valA = parseInt(a.star) || 0; valB = parseInt(b.star) || 0; break;
+      case 'game': valA = a.gameName || ''; valB = b.gameName || ''; break;
+      case 'type': valA = a.type; valB = b.type; break;
+      default: return 0;
+    }
+    if (valA < valB) return sortAsc ? -1 : 1;
+    if (valA > valB) return sortAsc ? 1 : -1;
+    return 0;
+  });
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function showDetail(idx) {
+  const review = allReviews.find(r => r.idx === idx);
+  if (!review) return;
+
+  document.getElementById('modalTitle').textContent = review.gameName || '评价详情';
+  document.getElementById('modalMeta').innerHTML = `
+    <span>📅 ${review.date || '-'}</span>
+    <span>⭐ ${review.starText}</span>
+    <span>🎮 ${review.gameName || '未知游戏'}</span>
+    ${review.playTime ? `<span>⏱ ${review.playTime}</span>` : ''}
+    <span>📝 ${review.typeText}</span>
+  `;
+  document.getElementById('modalContent').textContent = review.content || '(无内容)';
+  document.getElementById('modalLink').innerHTML = `
+    <a class="link-btn" href="${review.url}" target="_blank">🔗 在好游快爆中查看原文 ↗</a>
+  `;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// ── Export CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (allReviews.length === 0) return;
+
+  const headers = ['序号', '评价链接', '日期', '评分', '游戏名称', '游戏时长', '类型', '评价内容'];
+  const rows = allReviews.map(r => [
+    r.idx,
+    r.url,
+    r.date,
+    r.starText,
+    r.gameName,
+    r.playTime,
+    r.typeText,
+    r.content.replace(/"/g, '""').replace(/\n/g, ' ')
+  ]);
+
+  let csv = '\uFEFF'; // BOM for Excel
+  csv += headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.map(cell => `"${cell || ''}"`).join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `3839评价_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = '❌ ' + msg;
+  el.classList.add('active');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('active');
+}
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Enter key support
+document.getElementById('uidInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startFetch();
+});
+
+// Show empty state initially
+document.getElementById('emptyState').style.display = 'block';
+</script>
+
+</body>
+</html>

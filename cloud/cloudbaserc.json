@@ -1,0 +1,23 @@
+{
+  "envId": "nanhua-7gd6q2h3cb2db2cb",
+  "functions": [
+    {
+      "name": "tcb-proxy",
+      "config": {
+        "runtime": "Nodejs18.15",
+        "memory": 128,
+        "timeout": 15,
+        "handler": "index.main"
+      }
+    },
+    {
+      "name": "web-index",
+      "config": {
+        "runtime": "Nodejs18.15",
+        "memory": 128,
+        "timeout": 5,
+        "handler": "index.main"
+      }
+    }
+  ]
+}
