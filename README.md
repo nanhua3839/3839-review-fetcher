@@ -2,11 +2,11 @@
 
 从 [好游快爆](https://www.3839.com/) 批量读取用户动态（游戏评价/论坛帖子/回复），支持在线可视化页面和多种格式导出。
 
-## 在线可视化页面
+## 在线可视化页面（已弃用）
 
 无需安装任何环境，直接打开网页即可使用：
 
-**[https://nanhua-7gd6q2h3cb2db2cb-1322713376.tcloudbaseapp.com/](https://nanhua-7gd6q2h3cb2db2cb-1322713376.tcloudbaseapp.com/)**
+**[https://nanhua-7gd6q2h3cb2db2cb-1322713376.tcloudbaseapp.com/](https://nanhua-7gd6q2h3cb2db2cb-1322713376.tcloudbaseapp.com/)**（已弃用）
 
 ### 页面功能
 
